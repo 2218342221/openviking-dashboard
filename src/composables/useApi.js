@@ -4,7 +4,8 @@ export function useApi() {
   const { state } = useAuth()
 
   async function api(endpoint, { method = 'GET', body, query } = {}) {
-    let url = '/api' + endpoint
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+    let url = base + '/api' + endpoint
     if (query) {
       const qs = new URLSearchParams(query).toString()
       if (qs) url += '?' + qs
