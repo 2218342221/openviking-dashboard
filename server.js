@@ -23,25 +23,43 @@ function loadOvConfig() {
 }
 
 const { rootKey: ROOT_KEY, port: OV_PORT } = loadOvConfig()
-const OV_BASE = `http://127.0.0.1:${OV_PORT}`
+const OV_HOSTS = process.env.OV_HOST
+  ? [process.env.OV_HOST]
+  : ['127.0.0.1', '[::1]']
 const ADMIN_PORT = parseInt(process.env.ADMIN_PORT || '3000', 10)
 
+let activeOvBase = null
+
 async function proxyToOV(apiKey, method, ovPath, { body, query } = {}) {
-  let url = `${OV_BASE}${ovPath}`
-  if (query) {
-    const qs = new URLSearchParams(query).toString()
-    if (qs) url += `?${qs}`
+  const bases = activeOvBase ? [activeOvBase] : OV_HOSTS.map(h => `http://${h}:${OV_PORT}`)
+  let lastErr
+  for (const base of bases) {
+    let url = `${base}${ovPath}`
+    if (query) {
+      const qs = new URLSearchParams(query).toString()
+      if (qs) url += `?${qs}`
+    }
+    const headers = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' }
+    const opts = { method, headers }
+    if (body && method !== 'GET' && method !== 'HEAD') {
+      opts.body = JSON.stringify(body)
+    }
+    try {
+      const res = await fetch(url, opts)
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { data = text }
+      if (!activeOvBase) {
+        activeOvBase = base
+        console.log(`Connected to OpenViking at ${base}`)
+      }
+      return { status: res.status, data }
+    } catch (e) {
+      lastErr = e
+    }
   }
-  const headers = { 'X-API-Key': apiKey, 'Content-Type': 'application/json' }
-  const opts = { method, headers }
-  if (body && method !== 'GET' && method !== 'HEAD') {
-    opts.body = JSON.stringify(body)
-  }
-  const res = await fetch(url, opts)
-  const text = await res.text()
-  let data
-  try { data = JSON.parse(text) } catch { data = text }
-  return { status: res.status, data }
+  activeOvBase = null
+  throw lastErr
 }
 
 function proxyWithUserKey(req, method, ovPath, opts = {}) {
@@ -54,8 +72,13 @@ function proxyWithRootKey(method, ovPath, opts = {}) {
 }
 
 async function sendProxy(res, proxyResult) {
-  const { status, data } = await proxyResult
-  res.status(status).json(data)
+  try {
+    const { status, data } = await proxyResult
+    res.status(status).json(data)
+  } catch (e) {
+    console.error(`Proxy error: ${e.message}`)
+    res.status(502).json({ error: `Failed to reach OpenViking server on port ${OV_PORT}: ${e.message}` })
+  }
 }
 
 const app = express()
@@ -177,5 +200,5 @@ server.listen(ADMIN_PORT, '::', () => {
   console.log(`OpenViking UI server listening on port ${ADMIN_PORT}`)
   console.log(`  Local:    http://127.0.0.1:${ADMIN_PORT}`)
   if (addrs.length) console.log(`  Network:  http://${addrs[0]}:${ADMIN_PORT}`)
-  console.log(`Proxying to OpenViking at ${OV_BASE}`)
+  console.log(`Proxying to OpenViking on port ${OV_PORT} (candidates: ${OV_HOSTS.join(', ')})`)
 })
