@@ -39,7 +39,8 @@ export function useAuth() {
   const isAdmin = computed(() => state.role === 'admin' || state.role === 'root')
 
   async function login(apiKey) {
-    const res = await fetch('/api/auth/login', {
+    const pathBase = window.location.pathname.replace(/\/?$/, '')
+    const res = await fetch(pathBase + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_key: apiKey }),
