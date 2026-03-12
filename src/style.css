@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, monospace;
+
+  --color-ov-bg: #020617;
+  --color-ov-surface: #0F172A;
+  --color-ov-surface-2: #1E293B;
+  --color-ov-border: #334155;
+  --color-ov-text: #F8FAFC;
+  --color-ov-text-muted: #94A3B8;
+  --color-ov-accent: #22C55E;
+  --color-ov-accent-hover: #16A34A;
+  --color-ov-danger: #EF4444;
+  --color-ov-danger-hover: #DC2626;
+  --color-ov-warning: #F59E0B;
+  --color-ov-info: #3B82F6;
+  --color-ov-sidebar: #0F172A;
+  --color-ov-sidebar-active: #1E293B;
+  --color-ov-input: #1E293B;
+  --color-ov-input-border: #475569;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ov-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ov-border);
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
