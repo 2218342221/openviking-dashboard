@@ -166,7 +166,7 @@ import { networkInterfaces } from 'node:os'
 
 const server = http.createServer(app)
 
-server.listen(ADMIN_PORT, '0.0.0.0', () => {
+server.listen(ADMIN_PORT, '::', () => {
   const addrs = []
   const ifaces = networkInterfaces()
   for (const name of Object.keys(ifaces)) {
