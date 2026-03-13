@@ -110,6 +110,20 @@ app.post('/api/auth/login', async (req, res) => {
   }
 })
 
+// ---- Guest Registration (default account, root key) ----
+app.post('/api/auth/register', async (req, res) => {
+  const { user_id } = req.body
+  if (!user_id) return res.status(400).json({ error: 'user_id is required' })
+  try {
+    const result = await proxyToOV(ROOT_KEY, 'POST', '/api/v1/admin/accounts/default/users', {
+      body: { user_id },
+    })
+    res.status(result.status).json(result.data)
+  } catch (e) {
+    res.status(502).json({ error: `Failed to reach OpenViking: ${e.message}` })
+  }
+})
+
 // ---- System / Observer (user key) ----
 app.get('/api/health', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'GET', '/health')))
 app.get('/api/system/status', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'GET', '/api/v1/system/status')))
@@ -120,17 +134,23 @@ app.get('/api/observer/vikingdb', async (req, res) => sendProxy(res, proxyWithUs
 app.get('/api/observer/vlm', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'GET', '/api/v1/observer/vlm')))
 app.get('/api/observer/transaction', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'GET', '/api/v1/observer/transaction')))
 
-// ---- Admin: Accounts (root key) ----
+// ---- Admin: Accounts ----
 app.get('/api/admin/accounts', async (req, res) => sendProxy(res, proxyWithRootKey('GET', '/api/v1/admin/accounts')))
 app.post('/api/admin/accounts', async (req, res) => sendProxy(res, proxyWithRootKey('POST', '/api/v1/admin/accounts', { body: req.body })))
-app.delete('/api/admin/accounts/:id', async (req, res) => sendProxy(res, proxyWithRootKey('DELETE', `/api/v1/admin/accounts/${req.params.id}`)))
+app.delete('/api/admin/accounts/:id', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'DELETE', `/api/v1/admin/accounts/${req.params.id}`)))
 
-// ---- Admin: Users (root key) ----
+// ---- Admin: Users ----
 app.get('/api/admin/accounts/:id/users', async (req, res) => sendProxy(res, proxyWithRootKey('GET', `/api/v1/admin/accounts/${req.params.id}/users`)))
-app.post('/api/admin/accounts/:id/users', async (req, res) => sendProxy(res, proxyWithRootKey('POST', `/api/v1/admin/accounts/${req.params.id}/users`, { body: req.body })))
-app.delete('/api/admin/accounts/:aid/users/:uid', async (req, res) => sendProxy(res, proxyWithRootKey('DELETE', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}`)))
-app.put('/api/admin/accounts/:aid/users/:uid/role', async (req, res) => sendProxy(res, proxyWithRootKey('PUT', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}/role`, { body: req.body })))
-app.post('/api/admin/accounts/:aid/users/:uid/key', async (req, res) => sendProxy(res, proxyWithRootKey('POST', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}/key`)))
+app.post('/api/admin/accounts/:id/users', async (req, res) => {
+  const useRoot = req.params.id === 'default'
+  const proxy = useRoot
+    ? proxyWithRootKey('POST', `/api/v1/admin/accounts/${req.params.id}/users`, { body: req.body })
+    : proxyWithUserKey(req, 'POST', `/api/v1/admin/accounts/${req.params.id}/users`, { body: req.body })
+  sendProxy(res, proxy)
+})
+app.delete('/api/admin/accounts/:aid/users/:uid', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'DELETE', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}`)))
+app.put('/api/admin/accounts/:aid/users/:uid/role', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'PUT', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}/role`, { body: req.body })))
+app.post('/api/admin/accounts/:aid/users/:uid/key', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'POST', `/api/v1/admin/accounts/${req.params.aid}/users/${req.params.uid}/key`)))
 
 // ---- Sessions (user key) ----
 app.get('/api/sessions', async (req, res) => sendProxy(res, proxyWithUserKey(req, 'GET', '/api/v1/sessions')))

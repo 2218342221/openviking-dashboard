@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 
 import LoginView from '../views/LoginView.vue'
+import RegisterView from '../views/RegisterView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import AccountsView from '../views/AccountsView.vue'
 import SessionsView from '../views/SessionsView.vue'
@@ -15,6 +16,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { guest: true } },
+  { path: '/register', name: 'register', component: RegisterView, meta: { guest: true } },
   {
     path: '/',
     component: AppLayout,

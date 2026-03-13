@@ -138,6 +138,14 @@ function maskKey(key) {
           {{ loading ? 'Authenticating...' : 'Login' }}
         </button>
       </div>
+
+      <!-- Register link -->
+      <div class="text-center mt-4">
+        <span class="text-sm text-ov-text-muted">Don't have an API key? </span>
+        <router-link :to="{ name: 'register' }" class="text-sm text-ov-accent hover:text-ov-accent-hover font-medium transition-colors">
+          Create a new user
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
